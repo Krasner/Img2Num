@@ -1,4 +1,5 @@
 #include "imageToSVG.h"
+#include "mergeSmallRegionsInPlace.h"
 #include <vector>
 #include <queue>
 #include <sstream>
@@ -47,7 +48,7 @@ static std::vector<std::pair<int,int>> traceContour(const std::vector<int>& labe
   for (int y = 0; y < height && sx == -1; ++y) {
     for (int x = 0; x < width; ++x) {
       if (labels[idx(x,y,width)] != lab) continue;
-      // check 4-neighbor (or 8-neighbor) if any neighbor is not same label or out of bounds
+      // check 8-neighbor if any neighbor is not same label or out of bounds
       bool boundary = false;
       for (int k = 0; k < 8; ++k) {
         int nx = x + dx[k], ny = y + dy[k];
@@ -65,40 +66,39 @@ static std::vector<std::pair<int,int>> traceContour(const std::vector<int>& labe
   std::vector<std::pair<int,int>> contour;
   contour.emplace_back(sx, sy);
 
-  // According to Moore, start by setting the 'previous' pixel b to the neighbor just before the West neighbor:
-  // We'll initialize b to (sx+1, sy) (east) so the search order starts from W side.
   int px = sx, py = sy;
   int bx = sx + 1, by = sy; // previous pixel (outside the region)
-  // We will loop until we return to starting pixel and the next point would be the second point
   int iterLimit = width * height * 10; // safety cap
   int iter = 0;
 
-  // helper to find index in neighbor list for a given neighbor offset
   auto neighborIndex = [&](int nx, int ny)->int {
-    for (int i = 0; i < 8; ++i) if (px + dx[i] == nx && py + dy[i] == ny) return i;
+    for (int i = 0; i < 8; ++i) if (px + ( (i==0||i==1||i==7)?-1: (i==3||i==4||i==5)?1:0 ) /*not used*/ == nx && py == ny) return i;
+    // The simple neighborIndex used earlier assumed px/py; we'll fallback below if needed
+    for (int i = 0; i < 8; ++i) if (px + ( (i==0||i==1||i==7)?-1: (i==3||i==4||i==5)?1:0 ) == nx && py == ny) return i;
     return -1;
   };
 
-  // find second point
+  // We'll implement Moore tracing loop similarly to earlier approach but without relying on neighborIndex heavily:
+  // Use the canonical 8 neighbors relative to current p
+  const int ndx[8] = {-1,-1,0,1,1,1,0,-1};
+  const int ndy[8] = {0,-1,-1,-1,0,1,1,1};
+
+  // for the first iteration set previous b to east (sx+1,sy) so we start search from W side
+  bx = sx + 1; by = sy;
+
   while (iter++ < iterLimit) {
-    // Find the index of neighbor b in the 8-neighbor circle around current p
-    int startK = 0;
-    // compute the neighbor index of b relative to current p if b is adjacent, otherwise find index of E (dx=1,dy=0)
-    int bIdx = neighborIndex(bx, by);
-    if (bIdx == -1) {
-      // if b isn't an actual neighbor (first iteration), set start to 0 (W)
-      startK = 0;
-    } else {
-      // start from the neighbor after b in clockwise order
-      startK = (bIdx + 1) % 8;
+    // find index of b relative to current p
+    int bIdx = -1;
+    for (int i = 0; i < 8; ++i) {
+      if (px + ndx[i] == bx && py + ndy[i] == by) { bIdx = i; break; }
     }
+    int startK = (bIdx == -1) ? 0 : ((bIdx + 1) % 8);
 
     int foundK = -1;
     int foundX = 0, foundY = 0;
-    // Search neighbors clockwise starting at startK until find a neighbor that is in the component
     for (int t = 0; t < 8; ++t) {
       int k = (startK + t) % 8;
-      int nx = px + dx[k], ny = py + dy[k];
+      int nx = px + ndx[k], ny = py + ndy[k];
       if (nx >= 0 && nx < width && ny >= 0 && ny < height && labels[idx(nx,ny,width)] == lab) {
         foundK = k;
         foundX = nx; foundY = ny;
@@ -107,7 +107,7 @@ static std::vector<std::pair<int,int>> traceContour(const std::vector<int>& labe
     }
 
     if (foundK == -1) {
-      // isolated pixel — add nothing more and break
+      // isolated pixel — stop
       break;
     }
 
@@ -115,24 +115,39 @@ static std::vector<std::pair<int,int>> traceContour(const std::vector<int>& labe
     bx = px; by = py;
     px = foundX; py = foundY;
 
-    // stop condition: if we've come back to start AND the previous point is the second point
     if (px == sx && py == sy && contour.size() > 1) {
-      // we have closed the loop
+      // closed
       break;
     }
     contour.emplace_back(px, py);
-
-    // continue
   }
 
   return contour;
 }
 
 void imageToSVG(const uint8_t* pixels, int width, int height, int minArea,
-                              char* outSvg, int outSvgSizeLimit) {
-  //if (!pixels || width <= 0 || height <= 0) return "";
+                char* outSvg, int outSvgSizeLimit) {
+  if (!pixels || width <= 0 || height <= 0 || !outSvg || outSvgSizeLimit <= 0) {
+    if (outSvg && outSvgSizeLimit > 0) outSvg[0] = '\0';
+    return;
+  }
 
   const int N = width * height;
+
+  // Make a modifiable copy of the pixel buffer so we can call mergeSmallRegionsInPlace.
+  // If minArea <= 0 we skip merging and use the original buffer.
+  std::vector<uint8_t> modPixels;
+  const uint8_t* srcPixels = pixels;
+
+  if (minArea > 0) {
+    modPixels.assign(pixels, pixels + (N * 4));
+    // choose minWidth/minHeight as sqrt(minArea) (at least 1)
+    int minDim = std::max(1, (int)std::floor(std::sqrt((double)std::max(1, minArea))));
+    // Call merge: this mutates modPixels in-place
+    mergeSmallRegionsInPlace(modPixels.data(), width, height, minArea, minDim, minDim);
+    srcPixels = modPixels.data();
+  }
+
   std::vector<int> labels(N, -1);
   std::vector<Color> regionColor;
   std::vector<int> regionSize;
@@ -146,9 +161,10 @@ void imageToSVG(const uint8_t* pixels, int width, int height, int minArea,
     for (int x = 0; x < width; ++x) {
       int id = idx(x,y,width);
       if (labels[id] != -1) continue;
-      Color c = getColor(pixels, width, x, y);
+      Color c = getColor(srcPixels, width, x, y);
       if (c.a == 0) {
-        // treat transparent pixel as background; leave label -1
+        // treat transparent pixel as background; leave label -1 and mark as visited (-2)
+        labels[id] = -2;
         continue;
       }
       // flood-fill
@@ -164,7 +180,7 @@ void imageToSVG(const uint8_t* pixels, int width, int height, int minArea,
           if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
           int nid = idx(nx, ny, width);
           if (labels[nid] != -1) continue;
-          Color nc = getColor(pixels, width, nx, ny);
+          Color nc = getColor(srcPixels, width, nx, ny);
           if (nc.a == 0) { labels[nid] = -2; continue; } // mark transparent as visited but not label
           if (nc.r == c.r && nc.g == c.g && nc.b == c.b && nc.a == c.a) {
             labels[nid] = nextLabel;

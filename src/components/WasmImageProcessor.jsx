@@ -13,7 +13,7 @@ const WasmImageProcessor = () => {
   const inputId = useId();
   const inputRef = useRef(null);
 
-  const { gaussianBlur, blackThreshold, kmeans, mergeSmallRegionsInPlace, imageToSVG } = useWasmWorker();
+  const { gaussianBlur, blackThreshold, kmeans, imageToSVG } = useWasmWorker();
 
   const [originalSrc, setOriginalSrc] = useState(null);
   const [fileData, setFileData] = useState(null);
@@ -112,17 +112,8 @@ const WasmImageProcessor = () => {
             area > 1_000_000 ? 15 : 10;
       const minArea = Math.ceil(Math.max(area / 10_000, minimumAllowedMinArea));
 
-      const merged = await mergeSmallRegionsInPlace({
-        pixels: kmeansed,
-        width,
-        height,
-        minArea,
-        minWidth,
-        minHeight,
-      });
-
       const svg = await imageToSVG({
-        pixels: merged,
+        pixels: kmeansed,
         width,
         height,
         minArea,
