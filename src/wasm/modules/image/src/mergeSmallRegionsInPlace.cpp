@@ -1,6 +1,5 @@
 #include "mergeSmallRegionsInPlace.h"
-#include <climits>
-#include <cstdint>
+#include "Region.h"
 #include <queue>
 #include <vector>
 
@@ -19,32 +18,6 @@ inline bool sameColor(const uint8_t *img, int w, int h, int x1, int y1, int x2,
   return img[i1] == img[i2] && img[i1 + 1] == img[i2 + 1] &&
          img[i1 + 2] == img[i2 + 2] && img[i1 + 3] == img[i2 + 3];
 }
-
-// Region metadata for bounding box
-struct Region {
-  int size = 0;
-  int minX = INT_MAX, maxX = INT_MIN;
-  int minY = INT_MAX, maxY = INT_MIN;
-
-  void add(int x, int y) {
-    size++;
-    if (x < minX)
-      minX = x;
-    if (x > maxX)
-      maxX = x;
-    if (y < minY)
-      minY = y;
-    if (y > maxY)
-      maxY = y;
-  }
-
-  int width() const { return maxX - minX + 1; }
-  int height() const { return maxY - minY + 1; }
-
-  bool isBigEnough(int minArea, int minWidth, int minHeight) const {
-    return size >= minArea && width() >= minWidth && height() >= minHeight;
-  }
-};
 
 // TODO: check for gaps inside regions - its possible their dimensions are fine,
 // but inner gaps reduce effective width and height
@@ -101,12 +74,12 @@ void mergeSmallRegionsInPlace(uint8_t *pixels, int width, int height,
         int nx = x + d[0], ny = y + d[1];
         if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
           int nl = labels[idx(nx, ny, width)];
-          if (nl != l &&
-              regions[nl].isBigEnough(minArea, minWidth, minHeight)) {
+          if (nl != l && regions[nl].isBigEnough(minArea, minWidth, minHeight)) {
             // Copy color
-            for (int c = 0; c < 4; c++)
-              pixels[idx(x, y, width) * 4 + c] =
-                  pixels[idx(nx, ny, width) * 4 + c];
+            for (int c = 0; c < 4; c++) {
+              pixels[idx(x, y, width) * 4 + c] = pixels[idx(nx, ny, width) * 4 + c];
+            }
+
             labels[idx(x, y, width)] = nl;
             break;
           }

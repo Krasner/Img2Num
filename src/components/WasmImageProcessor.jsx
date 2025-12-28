@@ -13,7 +13,7 @@ const WasmImageProcessor = () => {
   const inputId = useId();
   const inputRef = useRef(null);
 
-  const { gaussianBlur, blackThreshold, kmeans, mergeSmallRegionsInPlace } = useWasmWorker();
+  const { gaussianBlur, blackThreshold, kmeans, mergeSmallRegionsInPlace, imageToSVG } = useWasmWorker();
 
   const [originalSrc, setOriginalSrc] = useState(null);
   const [fileData, setFileData] = useState(null);
@@ -97,6 +97,8 @@ const WasmImageProcessor = () => {
         num_colors: 8,
       });
 
+
+      step(95);
       // Get 2% of the input dimension (width / height), but default to 1 pixel
       const twoPercentOrOne = (dimension) => Math.ceil(Math.max(dimension * 0.02, 1));
       const minWidth = twoPercentOrOne(width);
@@ -119,17 +121,19 @@ const WasmImageProcessor = () => {
         minHeight,
       });
 
-      step(95);
-      const svg = await uint8ClampedArrayToSVG({
+      const svg = await imageToSVG({
         pixels: merged,
         width,
         height,
+        minArea,
       });
+
+      console.log(svg);
 
       step(100);
 
       navigate('/editor', {
-        state: { svg, imgData: { pixels: merged, width, height } },
+        state: { svg, imgData: { pixels: svg, width, height } },
       });
     } catch (err) {
       console.error(err);
@@ -139,7 +143,7 @@ const WasmImageProcessor = () => {
         step(0);
       }, 800);
     }
-  }, [fileData, gaussianBlur, blackThreshold, kmeans, mergeSmallRegionsInPlace, navigate, step]);
+  }, [fileData, gaussianBlur, blackThreshold, kmeans, imageToSVG, navigate, step]);
 
   /* Memo'd UI fragments */
   const EmptyState = useMemo(
