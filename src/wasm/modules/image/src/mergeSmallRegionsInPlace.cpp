@@ -1,65 +1,19 @@
 #include "mergeSmallRegionsInPlace.h"
-#include "Region.h"
+#include "floodFillLabel.h"
 #include <queue>
-#include <vector>
 
 struct Pixel {
   int x, y;
 };
 
 // Helper to get 1D index from x,y
-inline int idx(int x, int y, int width) { return y * width + x; }
-
-// Compare two RGBA pixels
-inline bool sameColor(const uint8_t *img, int w, int h, int x1, int y1, int x2,
-                      int y2) {
-  int i1 = idx(x1, y1, w) * 4;
-  int i2 = idx(x2, y2, w) * 4;
-  return img[i1] == img[i2] && img[i1 + 1] == img[i2 + 1] &&
-         img[i1 + 2] == img[i2 + 2] && img[i1 + 3] == img[i2 + 3];
-}
+static inline int idx(int x, int y, int width) { return y * width + x; }
 
 // TODO: check for gaps inside regions - its possible their dimensions are fine,
-// but inner gaps reduce effective width and height
-void mergeSmallRegionsInPlace(uint8_t *pixels, int width, int height,
+//          but inner gaps reduce effective width and height and distort quadrilateral area
+std::pair<std::vector<int>, std::vector<Region>>  mergeSmallRegionsInPlace(uint8_t *pixels, int width, int height,
                               int minArea, int minWidth, int minHeight) {
-  std::vector<int> labels(width * height, -1);
-  std::vector<Region> regions;
-  int nextLabel = 0;
-
-  // Flood-fill labeling
-  for (int y = 0; y < height; ++y) {
-    for (int x = 0; x < width; ++x) {
-      if (labels[idx(x, y, width)] != -1)
-        continue;
-
-      Region r;
-      std::queue<Pixel> q;
-      q.push({x, y});
-      labels[idx(x, y, width)] = nextLabel;
-      r.add(x, y);
-
-      while (!q.empty()) {
-        Pixel p = q.front();
-        q.pop();
-        int dirs[4][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
-        for (auto &d : dirs) {
-          int nx = p.x + d[0], ny = p.y + d[1];
-          if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-            if (labels[idx(nx, ny, width)] == -1 &&
-                sameColor(pixels, width, height, p.x, p.y, nx, ny)) {
-              labels[idx(nx, ny, width)] = nextLabel;
-              r.add(nx, ny);
-              q.push({nx, ny});
-            }
-          }
-        }
-      }
-
-      regions.push_back(r);
-      nextLabel++;
-    }
-  }
+  auto [labels, regions] = floodFillLabel(pixels, width, height);
 
   // Merge small regions
   for (int y = 0; y < height; ++y) {
@@ -69,6 +23,8 @@ void mergeSmallRegionsInPlace(uint8_t *pixels, int width, int height,
         continue;
 
       // Check immediate neighbors
+      // TODO: make sure pixels on edges are not compared to non-neighbors
+      //        e.g., pixel at [width, 5] must not be compared to pixel at [0, 6] (it exists on the next line of pixels)
       int dirs[4][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
       for (auto &d : dirs) {
         int nx = x + d[0], ny = y + d[1];
@@ -80,11 +36,25 @@ void mergeSmallRegionsInPlace(uint8_t *pixels, int width, int height,
               pixels[idx(x, y, width) * 4 + c] = pixels[idx(nx, ny, width) * 4 + c];
             }
 
+            // update label
             labels[idx(x, y, width)] = nl;
+
+            // update regions (don't update small region metadata - it will be filtered out in next step)
+            regions[nl].add(x, y);
+            regions[l].size--;
             break;
           }
         }
       }
     }
   }
+
+  std::vector<Region> existingRegions;
+  for (Region &r : regions) {
+    if (r.size > 0) {
+      existingRegions.push_back(r);
+    }
+  }
+
+  return std::make_pair(labels, existingRegions);
 }

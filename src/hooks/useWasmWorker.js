@@ -32,19 +32,19 @@ export function useWasmWorker() {
       workerRef.current.postMessage({ id, funcName, args, bufferKeys });
     });
   }, []);
-  const gaussianBlur = async (              { pixels, width, height, sigma_pixels = width * 0.005 }) => {
-    return (await call('gaussian_blur_fft', { pixels, width, height, sigma_pixels }, ['pixels'])).output.pixels;
-  };
-  const blackThreshold = async (                { pixels, width, height, num_colors }) => {
-    return (await call('black_threshold_image', { pixels, width, height, num_colors }, ['pixels'])).output.pixels;
-  };
-  const kmeans = async (                    { pixels, width, height, num_colors, max_iter = 100 }) => {
-    return (await call('kmeans_clustering', { pixels, width, height, num_colors, max_iter }, ['pixels'])).output.pixels;
-  };
-  const mergeSmallRegionsInPlace = async ({ pixels, width, height, minArea, minWidth, minHeight }) => {
-    return (await call('mergeSmallRegionsInPlace', { pixels, width, height, minArea, minWidth, minHeight }, ['pixels']))
-      .output.pixels;
-  };
+  //const gaussianBlur = async (              { pixels, width, height, sigma_pixels = width * 0.005 }) => {
+    //return (await call('gaussian_blur_fft', { pixels, width, height, sigma_pixels }, ['pixels'])).output.pixels;
+  //};
+  //const blackThreshold = async (                { pixels, width, height, num_colors }) => {
+    //return (await call('black_threshold_image', { pixels, width, height, num_colors }, ['pixels'])).output.pixels;
+  //};
+  //const kmeans = async (                    { pixels, width, height, num_colors, max_iter = 100 }) => {
+    //return (await call('kmeans_clustering', { pixels, width, height, num_colors, max_iter }, ['pixels'])).output.pixels;
+  //};
+  //const mergeSmallRegionsInPlace = async ({ pixels, width, height, minArea, minWidth, minHeight }) => {
+    //return (await call('mergeSmallRegionsInPlace', { pixels, width, height, minArea, minWidth, minHeight }, ['pixels']))
+      //.output.pixels;
+  //};
   const imageToSVG = async (         { pixels, width, height, minArea }) => {
       const outSvgSizeLimit = width * height * 20; // roughly 20 bytes per pixel
       const outSvg = new Uint8Array(outSvgSizeLimit);
@@ -57,5 +57,5 @@ export function useWasmWorker() {
   };
 
 
-  return { call, gaussianBlur, blackThreshold, kmeans, mergeSmallRegionsInPlace, imageToSVG };
+  return imageToSVG;
 }

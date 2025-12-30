@@ -13,7 +13,7 @@ const WasmImageProcessor = () => {
   const inputId = useId();
   const inputRef = useRef(null);
 
-  const { gaussianBlur, blackThreshold, kmeans, imageToSVG } = useWasmWorker();
+  const imageToSVG = useWasmWorker();
 
   const [originalSrc, setOriginalSrc] = useState(null);
   const [fileData, setFileData] = useState(null);
@@ -78,33 +78,7 @@ const WasmImageProcessor = () => {
     step(5);
 
     try {
-      const { width, height } = fileData;
-
-      step(20);
-      const blurred = await gaussianBlur(fileData);
-
-      step(45);
-      const thresholded = await blackThreshold({
-        ...fileData,
-        pixels: blurred,
-        num_colors: 8,
-      });
-
-      step(70);
-      const kmeansed = await kmeans({
-        ...fileData,
-        pixels: thresholded,
-        num_colors: 8,
-      });
-
-
-      step(95);
-      // Get 2% of the input dimension (width / height), but default to 1 pixel
-      const twoPercentOrOne = (dimension) => Math.ceil(Math.max(dimension * 0.02, 1));
-      const minWidth = twoPercentOrOne(width);
-      const minHeight = twoPercentOrOne(height);
-
-      const area = width * height;
+      const area = fileData.width * fileData.height;
       // Prevents minArea from being too small
       const minimumAllowedMinArea =
         area > 100_000_000 ? 25 :
@@ -113,18 +87,14 @@ const WasmImageProcessor = () => {
       const minArea = Math.ceil(Math.max(area / 10_000, minimumAllowedMinArea));
 
       const svg = await imageToSVG({
-        pixels: kmeansed,
-        width,
-        height,
+        ...fileData,
         minArea,
       });
-
-      console.log(svg);
 
       step(100);
 
       navigate('/editor', {
-        state: { svg, imgData: { pixels: svg, width, height } },
+        state: { svg, imgData: { pixels: svg } },
       });
     } catch (err) {
       console.error(err);
@@ -134,7 +104,7 @@ const WasmImageProcessor = () => {
         step(0);
       }, 800);
     }
-  }, [fileData, gaussianBlur, blackThreshold, kmeans, imageToSVG, navigate, step]);
+  }, [fileData, imageToSVG, navigate, step]);
 
   /* Memo'd UI fragments */
   const EmptyState = useMemo(

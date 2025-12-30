@@ -1,5 +1,7 @@
 #include "imageToSVG.h"
 #include "mergeSmallRegionsInPlace.h"
+#include "image_utils.h"
+#include "kmeans.h"
 #include <vector>
 #include <queue>
 #include <sstream>
@@ -10,31 +12,6 @@
 #include <emscripten/console.h>
 
 static inline int idx(int x, int y, int w) { return y * w + x; }
-
-struct Color {
-  uint8_t r, g, b, a;
-};
-
-static Color getColor(const uint8_t* pixels, int w, int x, int y) {
-  int i = idx(x, y, w) * 4;
-  return { pixels[i], pixels[i+1], pixels[i+2], pixels[i+3] };
-}
-
-static inline bool sameColor(const uint8_t* pixels, int w, int x1, int y1, int x2, int y2) {
-  Color c1 = getColor(pixels, w, x1, y1);
-  Color c2 = getColor(pixels, w, x2, y2);
-  return c1.r == c2.r && c1.g == c2.g && c1.b == c2.b && c1.a == c2.a;
-}
-
-/// Convert RGBA to hex string like "#rrggbb"
-static std::string colorToHex(const Color &c) {
-  std::ostringstream ss;
-  ss << '#' << std::hex << std::setfill('0')
-     << std::setw(2) << (int)c.r
-     << std::setw(2) << (int)c.g
-     << std::setw(2) << (int)c.b;
-  return ss.str();
-}
 
 /// Trace outer contour of a connected component labeled with `lab` using Moore neighbor tracing.
 /// Returns vector of (x,y) points in order. If it fails, returns empty vector.
@@ -132,68 +109,23 @@ void imageToSVG(const uint8_t* pixels, int width, int height, int minArea,
     return;
   }
 
-  const int N = width * height;
+  const int area{width * height};
 
   // Make a modifiable copy of the pixel buffer so we can call mergeSmallRegionsInPlace.
   // If minArea <= 0 we skip merging and use the original buffer.
-  std::vector<uint8_t> modPixels;
-  const uint8_t* srcPixels = pixels;
+  std::vector<uint8_t> modPixels{pixels, pixels + (area * 4)};
 
-  if (minArea > 0) {
-    modPixels.assign(pixels, pixels + (N * 4));
-    // choose minWidth/minHeight as sqrt(minArea) (at least 1)
-    int minDim = std::max(1, (int)std::floor(std::sqrt((double)std::max(1, minArea))));
-    // Call merge: this mutates modPixels in-place
-    mergeSmallRegionsInPlace(modPixels.data(), width, height, minArea, minDim, minDim);
-    srcPixels = modPixels.data();
-  }
+  gaussian_blur_fft(modPixels.data(), width, height, width * 0.005);
 
-  std::vector<int> labels(N, -1);
-  std::vector<Color> regionColor;
-  std::vector<int> regionSize;
+  black_threshold_image(modPixels.data(), width, height, 8);
 
-  int nextLabel = 0;
-  // 4-neighbor flood fill to label components (skip fully transparent pixels)
-  const int dx4[4] = {1,-1,0,0};
-  const int dy4[4] = {0,0,1,-1};
+  kmeans_clustering(modPixels.data(), width, height, 8, 100);
 
-  for (int y = 0; y < height; ++y) {
-    for (int x = 0; x < width; ++x) {
-      int id = idx(x,y,width);
-      if (labels[id] != -1) continue;
-      Color c = getColor(srcPixels, width, x, y);
-      if (c.a == 0) {
-        // treat transparent pixel as background; leave label -1 and mark as visited (-2)
-        labels[id] = -2;
-        continue;
-      }
-      // flood-fill
-      std::queue<std::pair<int,int>> q;
-      q.push({x,y});
-      labels[id] = nextLabel;
-      int size = 0;
-      while (!q.empty()) {
-        auto p = q.front(); q.pop();
-        size++;
-        for (int k = 0; k < 4; ++k) {
-          int nx = p.first + dx4[k], ny = p.second + dy4[k];
-          if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
-          int nid = idx(nx, ny, width);
-          if (labels[nid] != -1) continue;
-          Color nc = getColor(srcPixels, width, nx, ny);
-          if (nc.a == 0) { labels[nid] = -2; continue; } // mark transparent as visited but not label
-          if (nc.r == c.r && nc.g == c.g && nc.b == c.b && nc.a == c.a) {
-            labels[nid] = nextLabel;
-            q.push({nx, ny});
-          }
-        }
-      }
-
-      regionColor.push_back(c);
-      regionSize.push_back(size);
-      nextLabel++;
-    }
-  }
+  // choose minWidth/minHeight as sqrt(minArea) (at least 1)
+  int minDimension = std::max(1, (int)std::floor(std::sqrt((double)std::max(1, minArea))));
+  // Call merge: this mutates modPixels in-place
+  auto [labels, regions] = mergeSmallRegionsInPlace(modPixels.data(), width, height, minArea, minDimension, minDimension);
+  const uint8_t* srcPixels{modPixels.data()};
 
   // Build SVG
   std::ostringstream ss;
@@ -204,8 +136,8 @@ void imageToSVG(const uint8_t* pixels, int width, int height, int minArea,
      << "shape-rendering=\"crispEdges\">\n";
 
   // For each region produce a path from its contour
-  for (int lab = 0; lab < nextLabel; ++lab) {
-    if (regionSize[lab] < minArea) continue;
+  for (int lab = 0; lab < regions.size(); ++lab) {
+    if (regions[lab].size < minArea) continue;
 
     auto contour = traceContour(labels, lab, width, height);
     if (contour.empty()) {
@@ -222,7 +154,7 @@ void imageToSVG(const uint8_t* pixels, int width, int height, int minArea,
         }
       }
       if (minX <= maxX && minY <= maxY) {
-        const Color &c = regionColor[lab];
+        const Color &c = regions[lab].color;
         std::string hex = colorToHex(c);
         double opacity = (double)c.a / 255.0;
         ss << "<rect x=\"" << minX << "\" y=\"" << minY
@@ -242,7 +174,7 @@ void imageToSVG(const uint8_t* pixels, int width, int height, int minArea,
     }
     path << " Z";
 
-    const Color &c = regionColor[lab];
+    const Color &c = regions[lab].color;
     std::string hex = colorToHex(c);
     double opacity = (double)c.a / 255.0;
     ss << "<path d=\"" << path.str() << "\" fill=\"" << hex << "\"";
