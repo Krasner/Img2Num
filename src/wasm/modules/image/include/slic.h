@@ -16,7 +16,7 @@ class SLIC {
         void meanColorImage(uint8_t* image, const size_t height, const size_t width, const std::vector<int>& labels, int num_labels);
 
 
-    private:
+    protected:
         struct Center {
             double L, a, b;
             double x, y;

@@ -58,5 +58,9 @@ export function useWasmWorker() {
       .output.pixels;
   };
 
-  return { call, gaussianBlur, bilateralFilter, blackThreshold, kmeans, mergeSmallRegionsInPlace };
+  const slicSegment = async({pixels, width, height}) => {
+    return (await call('slicpp_segmentation', { pixels, width, height}, ['pixels'])).output.pixels;
+  };
+
+  return { call, gaussianBlur, bilateralFilter, blackThreshold, kmeans, mergeSmallRegionsInPlace, slicSegment };
 }

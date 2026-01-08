@@ -292,7 +292,7 @@ void SLIC::enforceConnectivity_(std::vector<int>& labels, int& num_labels, int W
 }
 
 EXPORTED void slic_segmentation(uint8_t* image, size_t width, size_t height) {
-    SLIC slic(400, 10.0, 20);
+    SLIC slic(400, 5.0, 20);
     std::vector<int> labels;
     int num_labels = 0;
     slic.segment(image, height, width, labels, num_labels);

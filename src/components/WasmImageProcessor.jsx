@@ -13,7 +13,7 @@ const WasmImageProcessor = () => {
   const inputId = useId();
   const inputRef = useRef(null);
 
-  const { bilateralFilter, blackThreshold, kmeans, mergeSmallRegionsInPlace } = useWasmWorker();
+  const { bilateralFilter, blackThreshold, kmeans, mergeSmallRegionsInPlace, slicSegment } = useWasmWorker();
 
   const [originalSrc, setOriginalSrc] = useState(null);
   const [fileData, setFileData] = useState(null);
@@ -93,9 +93,14 @@ const WasmImageProcessor = () => {
       });
 
       step(70);
-      const kmeansed = await kmeans({
+      const sliced  = await slicSegment({
         ...fileData,
         pixels: thresholded,
+      })
+
+      const kmeansed = await kmeans({
+        ...fileData,
+        pixels: sliced,
         num_colors: 8,
       });
 
@@ -120,7 +125,7 @@ const WasmImageProcessor = () => {
 
       step(95);
       const svg = await uint8ClampedArrayToSVG({
-        pixels: merged,
+        pixels: kmeansed,
         width,
         height,
       });
@@ -138,7 +143,7 @@ const WasmImageProcessor = () => {
         step(0);
       }, 800);
     }
-  }, [fileData, bilateralFilter, blackThreshold, kmeans, mergeSmallRegionsInPlace, navigate, step]);
+  }, [fileData, bilateralFilter, blackThreshold, kmeans, mergeSmallRegionsInPlace, slicSegment, navigate, step]);
 
   /* Memo'd UI fragments */
   const EmptyState = useMemo(
