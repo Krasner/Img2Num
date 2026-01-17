@@ -151,48 +151,6 @@ void init_gpu() {
     std::cout << "GPU Fully Initialized." << std::endl;
 }
 
-/*void init_gpu() {
-    static const auto kTimedWaitAny = wgpu::InstanceFeatureName::TimedWaitAny;
-    wgpu::InstanceDescriptor instanceDesc{.requiredFeatureCount = 1,
-                                            .requiredFeatures = &kTimedWaitAny};
-    instance = wgpu::CreateInstance(&instanceDesc);
-
-    wgpu::Future f1 = instance.RequestAdapter(
-        nullptr, wgpu::CallbackMode::WaitAnyOnly,
-        [](wgpu::RequestAdapterStatus status, wgpu::Adapter a,
-            wgpu::StringView message) {
-            std::cout << "RequestAdapter message: " << message.data << "\n";
-            if (status != wgpu::RequestAdapterStatus::Success) {
-                std::cout << "RequestAdapter: failed" << "\n";
-            // exit(0);
-            }
-            adapter = std::move(a);
-        });
-    instance.WaitAny(f1, UINT64_MAX);
-
-    wgpu::DeviceDescriptor desc{};
-    desc.SetUncapturedErrorCallback([](const wgpu::Device&,
-                                        wgpu::ErrorType errorType,
-                                        wgpu::StringView message) {
-        std::cout << "Device Descriptor message: " << message.data << "\n";
-    });
-
-    wgpu::Future f2 = adapter.RequestDevice(
-        &desc, wgpu::CallbackMode::WaitAnyOnly,
-        [](wgpu::RequestDeviceStatus status, wgpu::Device d,
-            wgpu::StringView message) {
-            if (status != wgpu::RequestDeviceStatus::Success) {
-                std::cout << "RequestDevice: " << message.data << "\n";
-            // exit(0);
-            }
-            device = std::move(d);
-        });
-    instance.WaitAny(f2, UINT64_MAX);
-
-    queue = device.GetQueue();
-    gpu_initialized = true;
-}*/
-
 void bilateral_filter_gpu(uint8_t *image, size_t width, size_t height,
                       double sigma_spatial, double sigma_range,
                       uint8_t color_space) {
@@ -258,7 +216,7 @@ void bilateral_filter_gpu(uint8_t *image, size_t width, size_t height,
     queue.WriteBuffer(paramBuffer, 0, &params, sizeof(FilterParams));
 
     std::cout << "compile shader" << std::endl;
-    // 4. Compile Shader
+    // 4. Compile BilateralFilterShader
     wgpu::ShaderSourceWGSL wgslDesc;
     wgslDesc.code = shaderSource;
     wgpu::ShaderModuleDescriptor shaderDesc = {};
