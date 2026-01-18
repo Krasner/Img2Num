@@ -1,5 +1,5 @@
 #include "bilateral_filter_gpu.h"
-#include "cielab.h"
+#include "cielab_gpu.h"
 #include "exported.h"
 
 #include <algorithm>
@@ -183,12 +183,27 @@ void bilateral_filter_gpu(uint8_t *image, size_t width, size_t height,
     }
 
     std::cout << "begin wgpu portion" << std::endl;
-    // 1. Create Input Texture
+    // 1. Create Input Textures
+
+    // RGB input
     wgpu::TextureDescriptor texDesc = {};
     texDesc.size = { (uint32_t)width, (uint32_t)height, 1 };
     texDesc.format = wgpu::TextureFormat::RGBA8Unorm;
     texDesc.usage = wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::CopyDst;
     wgpu::Texture inputTexture = device.CreateTexture(&texDesc);
+    
+    // Create Intermediate Textures 
+
+    // if (color_space == COLOR_SPACE_OPTION_CIELAB) {
+        // LAB intermediate
+    wgpu::TextureDescriptor descLab = texDesc;
+    descLab.format = wgpu::TextureFormat::RGBA32Float; // <--- CRITICAL
+    descLab.usage = wgpu::TextureUsage::StorageBinding | wgpu::TextureUsage::TextureBinding;
+    wgpu::Texture texLabRaw = device.CreateTexture(&descLab);
+
+    // LAB filtered intermediate
+    wgpu::Texture texLabFiltered = device.CreateTexture(&descLab);
+    // }
 
     std::cout << "upload texture" << std::endl;
     // Upload data to Input Texture
@@ -217,51 +232,110 @@ void bilateral_filter_gpu(uint8_t *image, size_t width, size_t height,
 
     std::cout << "compile shader" << std::endl;
     // 4. Compile BilateralFilterShader
-    wgpu::ShaderSourceWGSL wgslDesc;
-    wgslDesc.code = shaderSource;
-    wgpu::ShaderModuleDescriptor shaderDesc = {};
-    shaderDesc.nextInChain = &wgslDesc;
-    shaderDesc.label = "BilateralFilterShader";
-    wgpu::ShaderModule shaderModule = device.CreateShaderModule(&shaderDesc);
+    wgpu::ShaderSourceWGSL wgslBilateralDesc;
+    
+    switch (color_space) {
+        case COLOR_SPACE_OPTION_CIELAB: {
+            wgslBilateralDesc.code = shaderBilateralCIELAB;
+            break;
+        }
+        case COLOR_SPACE_OPTION_RGB: {
+            wgslBilateralDesc.code = shaderBilateralRGB;
+            break;
+        }
+    }
+
+    wgpu::ShaderModuleDescriptor shaderBilateralDesc = {};
+    shaderBilateralDesc.nextInChain = &wgslBilateralDesc;
+    shaderBilateralDesc.label = "BilateralFilterShader";
+    wgpu::ShaderModule shaderBilateralModule = device.CreateShaderModule(&shaderBilateralDesc);
+
+    // if (color_space == COLOR_SPACE_OPTION_CIELAB) {
+    // color conversion shaders
+    wgpu::ShaderSourceWGSL wgslRgb2LabDesc;
+    wgslRgb2LabDesc.code = shaderRGB2CIELAB;
+
+    wgpu::ShaderModuleDescriptor shaderRgb2LabDesc = {};
+    shaderRgb2LabDesc.nextInChain = &wgslRgb2LabDesc;
+    shaderRgb2LabDesc.label = "RGB2CIELAB_Shader";
+    wgpu::ShaderModule shaderRgb2LabModule = device.CreateShaderModule(&shaderRgb2LabDesc);
+
+    wgpu::ShaderSourceWGSL wgslLab2RgbDesc;
+    wgslLab2RgbDesc.code = shaderCIELAB2RGB;
+
+    wgpu::ShaderModuleDescriptor shaderLab2RgbDesc = {};
+    shaderLab2RgbDesc.nextInChain = &wgslLab2RgbDesc;
+    shaderLab2RgbDesc.label = "CIELAB2RGB_Shader";
+    wgpu::ShaderModule shaderLab2RgbModule = device.CreateShaderModule(&shaderLab2RgbDesc);
+    // }
 
     std::cout << "compute pipeline" << std::endl;
     // 5. Create Compute Pipeline
+    /*
     wgpu::ComputePipelineDescriptor pipelineDesc = {};
-    pipelineDesc.compute.module = shaderModule;
+    pipelineDesc.compute.module = shaderBilateralModule;
     pipelineDesc.compute.entryPoint = "main";
-    wgpu::ComputePipeline pipeline = device.CreateComputePipeline(&pipelineDesc);
+    wgpu::ComputePipeline pipelineFilter = device.CreateComputePipeline(&pipelineDesc);
+    */
+    auto createPipeline = [&](const char* shaderCode, const char* label) {
+        wgpu::ShaderSourceWGSL wgsl;
+        wgsl.code = shaderCode;
+        wgpu::ShaderModuleDescriptor md = {};
+        md.nextInChain = &wgsl;
+        md.label = label;
+        wgpu::ShaderModule sm = device.CreateShaderModule(&md);
+        
+        // Debug print
+        printShaderError(sm);
+
+        wgpu::ComputePipelineDescriptor cpd = {};
+        cpd.compute.module = sm;
+        cpd.compute.entryPoint = "main";
+        return device.CreateComputePipeline(&cpd);
+    };
+
+    wgpu::ComputePipeline pipeFilter   = createPipeline(shaderBilateralModule, "Bilateral");
+    // if (color_space == COLOR_SPACE_OPTION_CIELAB) {   
+    wgpu::ComputePipeline pipeRGB2Lab  = createPipeline(shaderRgb2LabModule, "RGB2Lab");
+    wgpu::ComputePipeline pipeLab2RGB  = createPipeline(shaderLab2RgbModule, "Lab2RGB");
+    // }
 
     // 6. Create Bind Group
     // Note: We use GetBindGroupLayout(0) to auto-generate layout from shader
     wgpu::BindGroupDescriptor bindGroupDesc = {};
     bindGroupDesc.layout = pipeline.GetBindGroupLayout(0);
     
-    wgpu::BindGroupEntry entries[3];
+    wgpu::BindGroupEntry rgb2labEntries[2];
+    wgpu::BindGroupEntry lab2rgbEntries[2];
+    wgpu::BindGroupEntry filterEntries[3];
     
     // Entry 0: Input Texture View
-    entries[0].binding = 0;
-    entries[0].textureView = inputTexture.CreateView();
+    filterEntries[0].binding = 0;
+    filterEntries[0].textureView = inputTexture.CreateView();
 
     // Entry 1: Output Texture View
-    entries[1].binding = 1;
-    entries[1].textureView = outputTexture.CreateView();
+    filterEntries[1].binding = 1;
+    filterEntries[1].textureView = outputTexture.CreateView();
 
     // Entry 2: Uniform Buffer
-    entries[2].binding = 2;
-    entries[2].buffer = paramBuffer;
+    filterEntries[2].binding = 2;
+    filterEntries[2].buffer = paramBuffer;
     entries[2].size = sizeof(FilterParams);
 
     bindGroupDesc.entryCount = 3;
-    bindGroupDesc.entries = entries;
+    bindGroupDesc.entries = filterEntries;
     wgpu::BindGroup bindGroup = device.CreateBindGroup(&bindGroupDesc);
 
     // 7. Dispatch Compute Pass
+    uint32_t wgX = (width + 15) / 16;
+    uint32_t wgY = (height + 15) / 16;
+
     wgpu::CommandEncoder encoder = device.CreateCommandEncoder();
     wgpu::ComputePassEncoder pass = encoder.BeginComputePass();
-    pass.SetPipeline(pipeline);
+    pass.SetPipeline(pipeFilter);
     pass.SetBindGroup(0, bindGroup);
     // Workgroups of 16x16
-    pass.DispatchWorkgroups((width + 15) / 16, (height + 15) / 16);
+    pass.DispatchWorkgroups(wgX, wgY);
     pass.End();
 
     // 8. Prepare for Readback (Copy Texture -> Buffer)
