@@ -270,7 +270,7 @@ void kmeans_clustering_graph(uint8_t *data, int width, int height, int k,
         int bw = xywh[2]; int bh = xywh[3];
 
         ContoursResult contour_res = contours::find_contours(binary, bw, bh);
-        for (auto &c: contour_res.contours) {
+        /*for (auto &c: contour_res.contours) {
 
             // generate random color
             static std::mt19937 rng(std::random_device{}());
@@ -291,7 +291,7 @@ void kmeans_clustering_graph(uint8_t *data, int width, int height, int k,
                 results[idx + 2] = color[2];
                 results[idx + 3] = color[3];
             }
-        }
+        }*/
 
     }
     std::cout << "Done contouring" << std::endl;

@@ -1,13 +1,15 @@
 import { useEffect, useState, useId, useRef, useCallback, useMemo } from 'react';
 import { Upload } from 'lucide-react';
-import { loadImageToUint8Array } from '@utils/image-utils';
+import { loadImageToUint8Array, uint8ClampedArrayToSVG  } from '@utils/image-utils';
 import { useWasmWorker } from '@hooks/useWasmWorker';
 import GlassCard from '@components/GlassCard';
 import LoadingHedgehog from '@components/LoadingHedgehog';
 import Tooltip from '@components/Tooltip';
 import styles from './WasmImageProcessor.module.css';
+import { useNavigate } from 'react-router-dom';
 
 const WasmImageProcessor = () => {
+  const navigate = useNavigate();
   const inputId = useId();
   const inputRef = useRef(null);
   const contourCanvasRef = useRef(null);
@@ -157,8 +159,19 @@ const WasmImageProcessor = () => {
         height,
       });
 
-      setContourData({ pixels: contours, width, height });
+      //setContourData({ pixels: contours, width, height });
+      const svg = await uint8ClampedArrayToSVG({
+        pixels: kmeansed,
+        width,
+        height,
+      });
+
       step(100);
+
+      navigate('/editor', {
+        state: { svg },
+      });
+
     } catch (err) {
       console.error(err);
     } finally {
@@ -174,6 +187,7 @@ const WasmImageProcessor = () => {
     kmeans,
     mergeSmallRegionsInPlace,
     findContours,
+    navigate,
     step,
   ]);
 
