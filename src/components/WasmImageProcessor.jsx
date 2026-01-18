@@ -91,11 +91,10 @@ const WasmImageProcessor = () => {
       const thresholded = await blackThreshold({
         ...fileData,
         pixels: imgBilateralFiltered,
-        num_colors: 8,
+        num_colors: 16,
       });
 
       step(70);
-      console.time("kmeans")
       const { pixels: kmeansed, labels } = await kmeans({
         ...fileData,
         pixels: thresholded,

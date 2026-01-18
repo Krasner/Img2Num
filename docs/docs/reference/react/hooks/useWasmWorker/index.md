@@ -70,11 +70,19 @@ import TabItem from '@theme/TabItem';
     :::
     Import and use the `EXPORTED` macro from `exported.h` in your header file (make sure the function is not in a namespace):
 
+<<<<<<< HEAD
     ````cpp
     #include "exported.h"
 
         EXPORTED void add_arrays(int* a, int* b, int* out, int length);
         ```
+=======
+    ```cpp
+    #include "exported.h"
+
+    EXPORTED void add_arrays(int* a, int* b, int* out, int length);
+    ```
+>>>>>>> main
 
       </TabItem>
 
@@ -92,8 +100,11 @@ import TabItem from '@theme/TabItem';
       </TabItem>
     </Tabs>
 
+<<<<<<< HEAD
     ````
 
+=======
+>>>>>>> main
 2.  **Call it via the hook** using the `call` method, providing:
     - An object mapping argument names to values **in the same order as the C++ function signature**.
     - A `bufferKeys` array for all `TypedArrays` (pointers) that need WASM memory allocation.

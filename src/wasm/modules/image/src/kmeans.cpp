@@ -80,14 +80,14 @@ void kmeans(const uint8_t *data, uint8_t *out_data, int *out_labels,
   // k centroids, initialized to rgba(0,0,0,255)
   // Init of each pixel is from default in Image constructor
   ImageLib::Image<ImageLib::RGBAPixel<float>> centroids{k, 1};
-  std::vector<int> labels(num_pixels, 0);
+  std::vector<int32_t> labels(num_pixels, 0);
 
   std::vector<std::thread> threads;
   int pixels_per_thread = num_pixels / n_threads;
   int centroids_per_thread = k / n_threads;
 
   // Step 2: Initialize centroids randomly
-  srand(static_cast<unsigned int>(time(nullptr)));
+  srand(static_cast<uint32_t>(time(nullptr)));
   for (int32_t i{0}; i < k; ++i) {
     int32_t idx = rand() % num_pixels;
     centroids[i] = pixels[idx];
@@ -191,7 +191,7 @@ void kmeans(const uint8_t *data, uint8_t *out_data, int *out_labels,
 
     // Update step
     ImageLib::Image<ImageLib::RGBAPixel<float>> new_centroids(k, 1, 0);
-    std::vector<int> counts(k, 0);
+    std::vector<int32_t> counts(k, 0);
 
     for (int32_t i = 0; i < num_pixels; ++i) {
       int32_t cluster = labels[i];
@@ -224,7 +224,7 @@ void kmeans(const uint8_t *data, uint8_t *out_data, int *out_labels,
   }
 
   // Write labels to out_labels
-  std::memcpy(out_labels, labels.data(), labels.size() * sizeof(int));
+  std::memcpy(out_labels, labels.data(), labels.size() * sizeof(int32_t));
 }
 
 /*
@@ -255,7 +255,7 @@ void kmeans_clustering_spatial(uint8_t *data, int32_t width, int32_t height,
   int32_t num_pixels = width * height;
   std::vector<RGBXY> pixels(num_pixels);
   std::vector<RGBXY> centroids(k);
-  std::vector<int> labels(num_pixels, 0);
+  std::vector<int32_t> labels(num_pixels, 0);
 
   // Initialize pixels with color + spatial coords
   for (int32_t i = 0; i < height; ++i) {
@@ -270,7 +270,7 @@ void kmeans_clustering_spatial(uint8_t *data, int32_t width, int32_t height,
     }
   }
 
-  srand(static_cast<unsigned int>(time(nullptr)));
+  srand(static_cast<uint32_t>(time(nullptr)));
   for (int32_t i = 0; i < k; ++i) {
     int32_t idx = rand() % num_pixels;
     centroids[i] = pixels[idx];
@@ -304,7 +304,7 @@ void kmeans_clustering_spatial(uint8_t *data, int32_t width, int32_t height,
 
     // Update step
     std::vector<RGBXY> new_centroids(k, {0, 0, 0, 0, 0});
-    std::vector<int> counts(k, 0);
+    std::vector<int32_t> counts(k, 0);
 
     for (int32_t i = 0; i < num_pixels; ++i) {
       int32_t cluster = labels[i];

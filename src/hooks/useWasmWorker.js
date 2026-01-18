@@ -73,7 +73,7 @@ export function useWasmWorker() {
       labels: result.out_labels,
     };
   };
-  const findContours = async ({ pixels, labels, width, height, min_area = 10, draw_contour_borders = false }) => {
+  const findContours = async ({ pixels, labels, width, height, min_area = 100, draw_contour_borders = false }) => {
     return (
       await call('kmeans_clustering_graph', { pixels, labels, width, height, min_area, draw_contour_borders }, [
         'pixels',
