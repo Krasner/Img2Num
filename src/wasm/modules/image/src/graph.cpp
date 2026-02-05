@@ -110,7 +110,7 @@ void Graph::discover_edges(const std::vector<int32_t> &region_labels,
   constexpr int8_t dirs[8][2]{{1, 0}, {-1, 0},  {0, 1},  {0, -1},
                               {1, 1}, {-1, -1}, {-1, 1}, {1, -1}};
 
-  int32_t rneigh[4];
+  int32_t rneigh[8];
 
   for (int32_t y{0}; y < height; ++y) {
     for (int32_t x{0}; x < width; ++x) {
@@ -304,16 +304,19 @@ void Graph::compute_contours() {
 
     ColoredContours *c0 = &n->m_contours;
     for (size_t i = 0; i < c0->contours.size(); ++i) {
-      std::copy(all_contours[j].begin(), all_contours[j].end(),
-                c0->contours[i].begin());
+      //std::copy(all_contours[j].begin(), all_contours[j].end(),
+      //          c0->contours[i].begin());
+      c0->contours[i] = all_contours[j];
 
       c0->curves[i].resize(all_curves[j].size());
-      std::copy(all_curves[j].begin(), all_curves[j].end(),
-                c0->curves[i].begin());
+      //std::copy(all_curves[j].begin(), all_curves[j].end(),
+      //          c0->curves[i].begin());
+      c0->curves[i] = all_curves[j];
 
       c0->ccurves[i].resize(all_ccurves[j].size());
-      std::copy(all_ccurves[j].begin(), all_ccurves[j].end(),
-                c0->ccurves[i].begin());
+      //std::copy(all_ccurves[j].begin(), all_ccurves[j].end(),
+      //          c0->ccurves[i].begin());
+      c0->ccurves[i] = all_ccurves[j];
       j++;
     }
   }
