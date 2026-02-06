@@ -1,8 +1,12 @@
 #include "SavitskyGolay.h"
 #include <cassert>
+#include <cmath>
+#include <numeric>
+#include <stdexcept>
 
 SavitzkyGolay::SavitzkyGolay(int radius, int poly_order)
-    : m_(radius), window_size_(2 * radius + 1), poly_order_(poly_order) {
+    : window_radius_(radius), window_size_(2 * radius + 1),
+      poly_order_(poly_order) {
 
   assert(radius >= 0);
   assert(window_size_ > poly_order_);
@@ -18,19 +22,19 @@ std::vector<Point> SavitzkyGolay::filter(const std::vector<Point> &data) {
   std::vector<Point> result(data.size());
 
   // 1. Convolution for the valid range
-  for (size_t i = m_; i < data.size() - m_; ++i) {
+  for (size_t i = window_radius_; i < data.size() - window_radius_; ++i) {
     Point val{0.0, 0.0};
-    for (int j = -m_; j <= m_; ++j) {
-      val += data[i + j] * coeffs_[j + m_];
+    for (int j = -window_radius_; j <= window_radius_; ++j) {
+      val += data[i + j] * coeffs_[j + window_radius_];
     }
     result[i] = val;
   }
 
   // 2. Handle Edges (Simple Repeat/Nearest padding strategy)
   // For a robust production app, you might calculate asymmetric kernels here.
-  for (int i = 0; i < m_; ++i)
+  for (int i = 0; i < window_radius_; ++i)
     result[i] = data[i];
-  for (size_t i = data.size() - m_; i < data.size(); ++i)
+  for (size_t i = data.size() - window_radius_; i < data.size(); ++i)
     result[i] = data[i];
 
   return result;
@@ -47,14 +51,14 @@ std::vector<Point> SavitzkyGolay::filter_wrap(const std::vector<Point> &data) {
 
   for (size_t i = 0; i < data.size(); ++i) {
     Point val{0.0, 0.0};
-    for (int j = -m_; j <= m_; ++j) {
+    for (int j = -window_radius_; j <= window_radius_; ++j) {
       int k = i + j;
       if (k < 0) {
         k = data.size() + k;
       } else if (k >= data.size()) {
         k = k - data.size();
       }
-      val = val + data[k] * coeffs_[j + m_];
+      val = val + data[k] * coeffs_[j + window_radius_];
     }
     result[i] = val;
   }
@@ -85,7 +89,7 @@ std::vector<Point> SavitzkyGolay::filter_wrap_with_constraints(
     float Bx[3] = {0};
     float By[3] = {0};
     // if (locked[i] || corner[i]) { continue; }
-    for (int j = -m_; j <= m_; ++j) {
+    for (int j = -window_radius_; j <= window_radius_; ++j) {
       int k = i + j;
       if (k < 0) {
         k = data.size() + k;
@@ -123,7 +127,6 @@ std::vector<Point> SavitzkyGolay::filter_wrap_with_constraints(
       By[0] += w * yVal2;
       By[1] += w * yVal2 * xVal;
       By[2] += w * yVal2 * x2;
-      // val = val + data[k] * coeffs_[j + m_];
     } 
     val.x = solveQuadraticAtZero(A, Bx);
     val.y = solveQuadraticAtZero(A, By);
@@ -183,7 +186,7 @@ void SavitzkyGolay::compute_coefficients() {
   for (int i = 0; i < rows; ++i) {
     for (int j = 0; j < rows; ++j) {
       float sum = 0;
-      for (int k = -m_; k <= m_; ++k) {
+      for (int k = -window_radius_; k <= window_radius_; ++k) {
         sum += std::pow(k, i + j);
       }
       J[i][j] = sum;
@@ -199,12 +202,12 @@ void SavitzkyGolay::compute_coefficients() {
   // weight_k = sum( J_inv[0][j] * k^j ) for j=0..order
 
   coeffs_.resize(window_size_);
-  for (int k = -m_; k <= m_; ++k) {
+  for (int k = -window_radius_; k <= window_radius_; ++k) {
     float weight = 0.0;
     for (int j = 0; j < rows; ++j) {
       weight += J_inv[0][j] * std::pow(k, j);
     }
-    coeffs_[k + m_] = weight;
+    coeffs_[k + window_radius_] = weight;
   }
 }
 

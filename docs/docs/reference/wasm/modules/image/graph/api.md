@@ -7,10 +7,10 @@ sidebar_position: 5
 
 # Graph / Node API
 
-Each `Node` is a collection of pixels. A `Node` holds a `unique_ptr` to a vectors of pixels with `RGBXY` structure. \
+Each `Node` is a collection of pixels. A `Node` holds a `unique_ptr` to a vector of pixels with `RGBXY` structure. \
 Each pixel has its own color and position.
 
-`Node`s reference neigbors through node pointers (`shared_ptr`)
+`Node`s reference neighbors through node pointers (`shared_ptr`)
 
 ```cpp title="Nodes reference neigbors through node shared pointers"
 Node_ptr n_ptr = std::make_shared<Node>(<id>, <std::unique_ptr<std::vector<RGBXY>> pixels>);
@@ -81,7 +81,7 @@ G.compute_contours();
 In this function nodes are iterated over one at a time.
 Pseudocode:
 
-```
+```text
 for node in G.nodes
 {
     // Consider all neigbors

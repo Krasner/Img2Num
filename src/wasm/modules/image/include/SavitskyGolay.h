@@ -1,11 +1,7 @@
-#ifndef SOLVER_H
-#define SOLVER_H
+#ifndef SAVITZKYGOLAY_H
+#define SAVITZKYGOLAY_H
 
 #include "Point.h"
-#include <cmath>
-#include <iomanip>
-#include <numeric>
-#include <stdexcept>
 #include <vector>
 
 struct Point;
@@ -13,7 +9,7 @@ struct Point;
 class SavitzkyGolay {
 private:
   int window_size_;
-  int m_; // half window size
+  int window_radius_; // half window size
   int poly_order_;
   std::vector<float> coeffs_;
 

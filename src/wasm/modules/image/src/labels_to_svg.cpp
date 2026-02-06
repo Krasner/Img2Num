@@ -1,7 +1,4 @@
-// TODO: The kmeans algorithm actually ignores the values of alpha where it
-// should actually be taken into account.
-
-#include "kmeans_graph.h"
+#include "labels_to_svg.h"
 #include "bezier.h"
 #include "contours.h"
 #include "graph.h"
@@ -153,47 +150,14 @@ std::string contourToSVGCurve(const std::vector<QuadBezier> &curves) {
     return "";
 
   std::ostringstream path;
-  path << std::fixed << std::setprecision(3);
+  path << std::fixed << std::setprecision(2);
 
   for (size_t i = 0; i < curves.size(); ++i) {
     const auto &c = curves[i];
-    if (i == 0) {
+    if (i == 0)
       path << "M " << c.p0.x << " " << c.p0.y << " ";
-    }
     path << "Q " << c.p1.x << " " << c.p1.y << " " << c.p2.x << " " << c.p2.y
-        << " ";
-
-    /*else {
-      path << "T " << c.p2.x << " " << c.p2.y << " ";
-    }*/
-
-  }
-
-  //  Close the path
-  path << "Z";
-  return path.str();
-}
-
-std::string contourToSVGCurve(const std::vector<CubicBezier> &curves) {
-
-  if (curves.empty())
-    return "";
-
-  std::ostringstream path;
-  path << std::fixed << std::setprecision(3);
-
-  for (size_t i = 0; i < curves.size(); ++i) {
-    const auto &c = curves[i];
-    if (i == 0) {
-      path << "M " << c.p0.x << " " << c.p0.y << " ";
-    }
-    path << "C " << c.p1.x << " " << c.p1.y << " " << c.p2.x << " " << c.p2.y << " "
-         << c.p3.x << " " << c.p3.y << " ";
-    /*}
-    else {
-      path << "T " << c.p2.x << " " << c.p2.y << " ";
-    }*/
-
+         << " ";
   }
 
   //  Close the path
@@ -210,8 +174,6 @@ std::string contoursResultToSVG(const ColoredContours &result, const int width,
 
   for (size_t i = 0; i < result.curves.size(); ++i) {
     std::string pathData = contourToSVGCurve(result.curves[i]);
-  //for (size_t i = 0; i < result.contours.size(); ++i) {
-    //std::string pathData = contourToSVGPath(result.contours[i]);
 
     const auto &px = result.colors[i];
     std::ostringstream oss;
@@ -229,25 +191,21 @@ std::string contoursResultToSVG(const ColoredContours &result, const int width,
 }
 
 /*
- *Parameters:
- *data: uint8_t* -> output image from K-Means in RGBA repeating format
- *([r,g,b,a, r,g,b,a, ...]) labels: int32_t* -> output of labelled regions from
- *K-Means, should be 1/4 the size of data since data is RGBA width, height: int
- *-> dimensions of image data represents (1/4 of the dimension data holds since
- *each pixel is RGBA)
- *
- * labels : width * height : number of pixels in image = 1 : 1 : 1
- */
-char *kmeans_clustering_graph(uint8_t *data, int32_t *labels, const int width,
-                              const int height, const int min_area,
-                              const bool draw_contour_borders) {
+data: uint8_t* -> output image from K-Means (or similar) in RGBA repeating
+format ([r,g,b,a, r,g,b,a, ...]) labels: int32_t* -> output of labelled regions
+from K-Means, should be 1/4 the size of data since data is RGBA labels : width *
+height : number of pixels in image = 1 : 1 : 1
+*/
+char *labels_to_svg(uint8_t *data, int32_t *labels, const int width,
+                    const int height, const int min_area,
+                    const bool draw_contour_borders) {
   const int32_t num_pixels{width * height};
-  std::vector<int32_t> kmeans_labels{labels, labels + num_pixels};
+  std::vector<int32_t> labels_vector{labels, labels + num_pixels};
   std::vector<int32_t> region_labels;
 
   // 1. enumerate regions and convert to Nodes
   std::vector<Node_ptr> nodes;
-  region_labeling(data, kmeans_labels, region_labels, width, height, nodes);
+  region_labeling(data, labels_vector, region_labels, width, height, nodes);
 
   // 2. initialize Graph from all Nodes
   std::unique_ptr<std::vector<Node_ptr>> node_ptr =
@@ -297,9 +255,6 @@ char *kmeans_clustering_graph(uint8_t *data, int32_t *labels, const int width,
     for (auto &c : node_contours.curves) {
       all_contours.curves.push_back(c);
     }
-    for (auto &c : node_contours.ccurves) {
-      all_contours.ccurves.push_back(c);
-    }
   }
 
   // 7. Copy recolored image back
@@ -309,10 +264,15 @@ char *kmeans_clustering_graph(uint8_t *data, int32_t *labels, const int width,
 
   // 8. Return SVG if requested
   if (!draw_contour_borders) {
-    std::string svg = contoursResultToSVG(all_contours, width, height);
-    // allocate char* dynamically
-    char *res_svg = new char[svg.size() + 1];
+    std::string svg{contoursResultToSVG(all_contours, width, height)};
+
+    // Dynamic C-style allocation (since returned over C ABI)
+    char *res_svg{static_cast<char *>(std::malloc(svg.size() + 1))};
+    if (!res_svg) {
+      return nullptr; // Allocation failed
+    }
     std::memcpy(res_svg, svg.c_str(), svg.size() + 1);
+
     return res_svg;
   }
 

@@ -138,8 +138,13 @@ args: {
 
 ```js title="Arguments that represent buffers (C++ arrays)"
 bufferKeys: [
+<<<<<<< HEAD
   { key: 'pixels', type: 'Uint8ClampedArray' },
   { key: 'labels', type: 'Int32Array' },
+=======
+  { key: "pixels", type: "Uint8ClampedArray" },
+  { key: "labels", type: "Int32Array" },
+>>>>>>> main
 ];
 ```
 
@@ -169,7 +174,11 @@ bufferKeys?.forEach(({ key, type }) => {
 
 ```js title="Dynamic lookup & invocation"
 const exportName = `_${funcName}`;
+<<<<<<< HEAD
 if (typeof wasmModule[exportName] !== 'function') throw new Error(`Export not found: ${exportName}`);
+=======
+if (typeof wasmModule[exportName] !== "function") throw new Error(`Export not found: ${exportName}`);
+>>>>>>> main
 const result = wasmModule[exportName](...Object.values(args ?? {}));
 ```
 

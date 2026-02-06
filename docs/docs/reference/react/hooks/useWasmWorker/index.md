@@ -56,7 +56,11 @@ Also see the [`WASM_TYPES` documentation](../../workers/wasm-worker/#typedarray-
 const { call } = useWasmWorker();
 
 const { output } = await call({
+<<<<<<< HEAD
   funcName: 'add_arrays',
+=======
+  funcName: "add_arrays",
+>>>>>>> main
   args: {
     a: arrayA,
     b: arrayB,
@@ -64,9 +68,15 @@ const { output } = await call({
     length: arrayA.length,
   },
   bufferKeys: [
+<<<<<<< HEAD
     { key: 'a', type: 'Int32Array' },
     { key: 'b', type: 'Int32Array' },
     { key: 'out', type: 'Int32Array' },
+=======
+    { key: "a", type: "Int32Array" },
+    { key: "b", type: "Int32Array" },
+    { key: "out", type: "Int32Array" },
+>>>>>>> main
   ],
 });
 
@@ -166,6 +176,13 @@ bilateralFilter(params: {
    * @default 0
    */
   color_space?: number;
+<<<<<<< HEAD
+=======
+  /**
+   * @default 8
+   */
+  n_threads?: number;
+>>>>>>> main
 }): Promise<Uint8ClampedArray>
 ```
 
@@ -176,7 +193,11 @@ Possible values:
 - **0**: CIE La\*b\* (closer to human perception)
 - **1**: sRGB (the default color space for computers)
 
+<<<<<<< HEAD
 The default for this parameter is CIE LAB because it closer to human perception and bilateral filters are usually
+=======
+The default for this parameter is CIE LAB because it is closer to human perception, and bilateral filters typically produce better edge-preserving results in perceptually uniform color spaces.
+>>>>>>> main
 
 :::
 
@@ -268,6 +289,7 @@ findContours(params: {
   width: number;
   height: number;
   /**
+<<<<<<< HEAD
    * @default 100
    */
   min_area?: number;
@@ -276,6 +298,16 @@ findContours(params: {
    */
   draw_contour_borders?: boolean;
 }): Promise<Uint8ClampedArray>
+=======
+   * `@default` 100
+   */
+  min_area?: number;
+  /**
+   * `@default` false
+   */
+  draw_contour_borders?: boolean;
+}): Promise<{ svg: string; visualization: Uint8ClampedArray }>
+>>>>>>> main
 ```
 
 #### Example Usage
@@ -283,7 +315,14 @@ findContours(params: {
 ```ts
 const { findContours } = useWasmWorker();
 
+<<<<<<< HEAD
 const contouredPixels = await findContours({
+=======
+const {
+  svg, // pixels converted to SVG string
+  visualization, // pixels raster image with contours outlined
+} = await findContours({
+>>>>>>> main
   pixels,
   labels,
   width,
@@ -302,7 +341,11 @@ Each entry specifies:
 ```ts
 {
   key: string;
+<<<<<<< HEAD
   type: 'Int32Array' | 'Uint8Array' | 'Uint8ClampedArray';
+=======
+  type: "Int32Array" | "Uint8Array" | "Uint8ClampedArray";
+>>>>>>> main
 }
 ```
 
@@ -341,9 +384,15 @@ The worker currently supports:
    ```js
    myFunction: async ({ data, length }) => {
      const result = await call({
+<<<<<<< HEAD
        funcName: 'my_function',
        args: { data, length },
        bufferKeys: [{ key: 'data', type: 'Int32Array' }],
+=======
+       funcName: "my_function",
+       args: { data, length },
+       bufferKeys: [{ key: "data", type: "Int32Array" }],
+>>>>>>> main
      });
      return result.output.data;
    };
