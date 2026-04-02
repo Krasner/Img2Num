@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['graph_42',['Graph',['../classGraph.html',1,'']]]
+  ['filterparams_0',['FilterParams',['../structFilterParams.html',1,'']]]
 ];
