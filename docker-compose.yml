@@ -1,20 +1,25 @@
 services:
   dev:
-    image: ${IMG2NUM_IMAGE:-ryanmillard/img2num-dev:latest} # Allow specifying the image
-    environment:
-      IMG2NUM_IMAGE: ${IMG2NUM_IMAGE:-ryanmillard/img2num-dev:latest}
+    # image: ${IMG2NUM_IMAGE:-ryanmillard/img2num-dev:latest} # Allow specifying the image
+    # environment:
+    #   IMG2NUM_IMAGE: ${IMG2NUM_IMAGE:-ryanmillard/img2num-dev:latest}
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     pull_policy: always
     working_dir: /usr/src/app
     volumes:
       - .:/usr/src/app:rw,cached
       - /usr/src/app/.venv      # PROTECTS the container's .venv from being overwritten
       - pnpm-store:/pnpm
+      - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "5173:5173" # Vite dev
       - "4173:4173" # Vite preview
       - "3000:3000" # Docusaurus dev
     stdin_open: true
     tty: true
+    privileged: true
 
 volumes:
   pnpm-store:

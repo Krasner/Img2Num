@@ -146,6 +146,9 @@ COPY scripts/img2num-dev-scripts/package.json scripts/img2num-dev-scripts/packag
 RUN --mount=type=cache,target=/pnpm/store \
     pnpm install --no-frozen-lockfile
 
+# -------------
+RUN curl -fsSL https://get.docker.com | sh
+
 # --------------------------------------------------------------------------------------------------------------
 # Dev UX settings
 ENV CHOKIDAR_USEPOLLING=true

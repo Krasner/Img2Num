@@ -31,7 +31,7 @@ Changelog     = "https://github.com/Ryan-Millard/Img2Num/blob/main/CHANGELOG.md"
 requires = [
   "scikit-build-core>=0.10",
   "pybind11>=2.10",
-  "numpy>=2.0"
+  "numpy>=2.0",
 ]
 build-backend = "scikit_build_core.build"
 
@@ -42,6 +42,7 @@ cmake.args = [
   "-DBUILD_PYTHON=ON",
   "-DPython3_FIND_VIRTUALENV=NEVER",
   "-DIMG2NUM_BUILD_EXAMPLES=OFF",
+  "-DPython3_DEVELOPMENT_SIGNATURE=ON",
 ]
 
 wheel.packages = ["img2num"]
@@ -62,6 +63,17 @@ members = [
   # All example apps with "-py" suffix
   "example-apps/*-py"
 ]
+
+[tool.cibuildwheel]
+build-frontend = "build[uv]"
+before-build = "rm -rf build/ dist/ *.egg-info .venv/ packages/py/build-py/bindings/py/_img2num*.so"
+skip = "*-musllinux_*"
+
+# [tool.cibuildwheel.config-settings]
+# "cmake.args" = "-DPython3_EXECUTABLE=${PYTHON} -DPython3_DEVELOPMENT_SIGNATURE=ON"
+
+# [tool.cibuildwheel.linux]
+# repair-wheel-command = ""
 
 [tool.ruff]
 target-version = "py310"

@@ -16,7 +16,18 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(PYBIND11_FINDPYTHON ON)
-find_package(Python3 REQUIRED COMPONENTS Interpreter Development NumPy)
+# find_package(Python3 REQUIRED COMPONENTS Interpreter Development NumPy)
+find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module)
+
+execute_process(
+    COMMAND "${Python3_EXECUTABLE}" -c "import numpy; print(numpy.get_include())"
+    OUTPUT_VARIABLE NumPy_INCLUDE_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+# 3. Print it out to your cibuildwheel logs so you can verify it worked
+message(STATUS "Found NumPy include directory: ${NumPy_INCLUDE_DIR}")
+
 find_package(pybind11 REQUIRED)
 
 file(GLOB BINDING_SRC
@@ -28,6 +39,7 @@ target_link_libraries(_img2num PRIVATE Img2Num)
 
 target_include_directories(_img2num PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    {NumPy_INCLUDE_DIR}
 )
 
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/packages/py/img2num/
