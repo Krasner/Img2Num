@@ -234,8 +234,8 @@ if (__TARGET__ === "node") {
   // (Node passes the raw payload directly, no nested event wrapper needed)
   parentPort.on("message", async (data) => {
     await handleMessage(data);
-    await destroyWebGPU();
-    parentPort.close();
+    // await destroyWebGPU();
+    // parentPort.close();
   });
 } else {
   // Browser Worker setup: Standard event-unwrapping listener

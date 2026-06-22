@@ -58,3 +58,5 @@ EMSCRIPTEN_KEEPALIVE char* image_to_svg(
 
     return img2num_image_to_svg(data, width, height, &config);
 }
+
+EMSCRIPTEN_KEEPALIVE void terminate() { img2num_terminate(); };

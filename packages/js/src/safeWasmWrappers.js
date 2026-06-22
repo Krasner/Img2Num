@@ -16,7 +16,7 @@
  *              Each function handles memory management and exposes a JavaScript-friendly API.
  */
 
-import { callWasm, initWasmWorker } from "./wasmClient.js";
+import { callWasm, initWasmWorker, terminateWasmWorker } from "./wasmClient.js";
 
 // Ensure worker is ready as soon as this module is imported
 await initWasmWorker(); //it's an async function as of #433
@@ -240,3 +240,8 @@ export const imageToSvg = async ({ pixels, width, height, sigma_spatial = 3, sig
   });
   return { svg: result.returnValue };
 };
+
+export const terminate = async () => {
+  await callWasm({funcName: "terminate"});
+  await terminateWasmWorker();
+}
