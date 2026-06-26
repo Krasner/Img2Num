@@ -160,8 +160,16 @@ export async function callWasm({ funcName, args = {}, bufferKeys = [], returnTyp
  *
  * @since 0.0.0
  */
-export function terminateWasmWorker() {
+export async function terminateWasmWorker() {
   if (!worker) return;
+  if (__TARGET__ === "node") {
+    const { initWebGPU, destroyWebGPU } = await import("./target/node/webgpu.js");
+    try {
+      await destroyWebGPU();
+    } catch (err) {
+      console.error(`[Img2Num node/wasmClient.js terminateWasmWorker] Error: ${err}`);
+    }
+  }
   worker.terminate();
   // Reject any pending calls before clearing
   for (const [_id, cb] of callbacks) {

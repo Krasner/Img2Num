@@ -90,6 +90,9 @@ std::string image_to_svg(
     const uint8_t* data, const int width, const int height, const ImageToSvgConfig& config
 );
 
+/// @copydoc IMG2NUM_H_TERMINATE_DOC
+void terminate();
+
 } // namespace img2num
 
 #endif // IMG2NUM_H

@@ -130,4 +130,9 @@ char* img2num_image_to_svg(
 
     return result;
 }
+
+void img2num_terminate() {
+    img2num::terminate();
+}
+
 }

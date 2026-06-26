@@ -1,4 +1,5 @@
 #include "img2num.h"
+#include "internal/gpu.h"
 
 #include <cstring>
 #include <vector>
@@ -29,4 +30,10 @@ std::string image_to_svg(
 
     return svg;
 }
+
+void terminate() {
+    // force deallocation of GPU if hasn't happened automatically
+    GPU::getClassInstance().~GPU();
+}
+
 } // namespace img2num

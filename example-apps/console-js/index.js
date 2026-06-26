@@ -1,5 +1,5 @@
 import { writeFileSync } from "fs";
-import { imageToSvg } from "img2num";
+import { imageToSvg, terminate } from "img2num";
 import sharp from "sharp";
 
 const imagePath = process.argv[2];
@@ -23,4 +23,9 @@ const { svg } = await imageToSvg({ pixels, width, height });
 
 writeFileSync("output.svg", svg);
 console.log("Done! SVG saved to output.svg");
-process.exit();
+
+terminate();
+
+setImmediate(() => {
+  process.exit(0);
+});

@@ -131,6 +131,9 @@ int main(int argc, char** argv) {
     }
 
     stbi_image_free(image_data_original);
+
+    img2num_terminate();
+
     free(img_data);
     free(out_data);
     free(out_labels);

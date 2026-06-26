@@ -91,6 +91,9 @@ char* img2num_labels_to_svg(
 char* img2num_image_to_svg(
     const uint8_t* data, const int width, const int height, const img2num_ImageToSvgConfig* config
 );
+
+void img2num_terminate();
+
 #ifdef __cplusplus
 }
 #endif

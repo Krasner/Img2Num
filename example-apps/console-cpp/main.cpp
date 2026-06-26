@@ -110,6 +110,9 @@ int main(int argc, char** argv) {
     }
 
     stbi_image_free(image_data_original);
+
+    img2num::terminate();
+    
     delete[] img_data;
     delete[] out_data;
     delete[] out_labels;
