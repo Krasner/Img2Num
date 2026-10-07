@@ -6,18 +6,18 @@ URL: https://img2num.dev/changelog/js
 
 ## Latest Release
 
-**v0.2.1** - 2026-07-05 *(latest)*
+**v0.4.2** - 2026-08-18 *(latest)*
 ### 🐛 Bug Fixes
 
-- **ImageToUint8Array:** memory leak and silent failure ( [#487](https://github.com/Ryan-Millard/Img2Num/issues/487) ) ( [0eb0598](https://github.com/Ryan-Millard/Img2Num/commit/0eb0598ec64ce6859946f79b89a554da87717f9c) )
-
-### 📚 Documentation
-
-- **packages/js:** add README for npm package ( [#466](https://github.com/Ryan-Millard/Img2Num/issues/466) ) ( [f193a54](https://github.com/Ryan-Millard/Img2Num/commit/f193a543f872b60a735706c1b5c1d6671c31563b) )
+- **commonjs:** load webgpu via dynamic import, fall back to CPU, and guard the CJS build ( [#562](https://github.com/Ryan-Millard/Img2Num/issues/562) ) ( [e44480d](https://github.com/Ryan-Millard/Img2Num/commit/e44480d9c4736c1ae67094a121731ae9adc4365b) )
 View full release page
 
 ## All Releases
 
+- v0.4.2 - 2026-08-18
+- v0.4.0 - 2026-08-16
+- v0.4.1 - 2026-08-16
+- v0.3.0 - 2026-07-31
 - v0.2.1 - 2026-07-05
 - v0.2.0 - 2026-06-27
 - v0.1.0 - 2026-05-29

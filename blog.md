@@ -2,21 +2,19 @@
 
 URL: https://img2num.dev/blog
 
-## We're Expanding the Maintainer Team
+## Contribute to Img2Num this October 🦔
 
-May 2, 2026 · 3 min read
-![Ryan Millard](https://avatars.githubusercontent.com/u/142347829?v=4) Ryan Millard
-Img2Num Author
+September 30, 2026 · 6 min read
+![Prachi Gupta](https://github.com/Prachi-Gupta2808.png) Prachi Gupta
+Img2Num Contributor
 
-![Img2Num maintainer expansion](/assets/images/2026-05-02-maintainers-expansion-a0919b4870176cdd32db75246f79fc50.png)
+![Hero](/assets/images/social-739456765b8bf4d0f927127168afbb20.png)
 
-Img2Num has grown well past the point where one or two people can own it responsibly.
+October is [Hacktoberfest](https://hacktoberfest.com/) season, and we'd love for this to be the month you contribute to **Img2Num** !
 
-The codebase now spans a performance-critical C++ core, cross-language bindings (Python, JavaScript, C), a WebAssembly build pipeline, CI/CD automation, and a Docusaurus docs site. Keeping all of that high-quality and sustainable requires real ownership — not just occasional PRs.
-
-We're looking for experienced contributors ready to take on scoped, ongoing responsibility.
+> Whether you're a seasoned open source contributor or someone making their very first pull request, we'd love to have you join us.
 
 **Tags:**
-- Maintainers
+- Hacktoberfest - Open Source - Community - Contributing
 
 **Read more**

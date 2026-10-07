@@ -4,6 +4,36 @@ URL: https://img2num.dev/changelog/py/changelog
 
 [`img2num-py`](https://github.com/Ryan-Millard/Img2Num/releases)
 
+## [v0.3.1 - 2026-09-24](https://github.com/Ryan-Millard/Img2Num/releases/tag/packages-py-v0.3.1)
+
+### 📚 Documentation
+
+- add JS 0.4.2 blog post, overhaul READMEs and security policy, redesign navbar ( [#558](https://github.com/Ryan-Millard/Img2Num/issues/558) ) ( [e1a2a8a](https://github.com/Ryan-Millard/Img2Num/commit/e1a2a8aa332dc0a3e826a80e2ac9581964f747f5) )
+
+## [v0.3.0 - 2026-08-13](https://github.com/Ryan-Millard/Img2Num/releases/tag/packages-py-v0.3.0)
+
+### ✨ Features
+
+- **py:** ship type information (stub + py.typed) in wheels ( [#540](https://github.com/Ryan-Millard/Img2Num/issues/540) ) ( [a858cb4](https://github.com/Ryan-Millard/Img2Num/commit/a858cb4c7ab8d107b3ff772269bffaf7a5bcf997) )
+
+### 📚 Documentation
+
+- **py:** auto-generate the Python API reference from docstrings ( [a858cb4](https://github.com/Ryan-Millard/Img2Num/commit/a858cb4c7ab8d107b3ff772269bffaf7a5bcf997) )
+
+## [v0.2.2 - 2026-07-30](https://github.com/Ryan-Millard/Img2Num/releases/tag/packages-py-v0.2.2)
+
+### 🐛 Bug Fixes
+
+- **readme:** update links to use img2num.dev domain ( [#508](https://github.com/Ryan-Millard/Img2Num/issues/508) ) ( [177b894](https://github.com/Ryan-Millard/Img2Num/commit/177b894f21bf7dcfca565734bba7e4603217f8c6) )
+
+### ⏪ Reverts
+
+- **1828f68:** packages-py v0.2.2 ( [#506](https://github.com/Ryan-Millard/Img2Num/issues/506) ) - broken release ( [19ecbe5](https://github.com/Ryan-Millard/Img2Num/commit/19ecbe5544369941a4452607a16fce5748026eb8) )
+
+### 📚 Documentation
+
+- **README.md:** add README specific to python package ( [#488](https://github.com/Ryan-Millard/Img2Num/issues/488) ) ( [d211d98](https://github.com/Ryan-Millard/Img2Num/commit/d211d988a8f5389c27d520b02a28f7731a76a48a) )
+
 ## [v0.2.1 - 2026-07-01](https://github.com/Ryan-Millard/Img2Num/releases/tag/packages-py-v0.2.1)
 
 > The previous version [v0.2.0](https://github.com/Ryan-Millard/Img2Num/releases/tag/packages-py-v0.2.0) was erroneously published as [v0.0.0](https://pypi.org/manage/project/img2num/release/0.0.0/) on PyPI.
