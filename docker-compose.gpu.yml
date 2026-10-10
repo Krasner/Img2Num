@@ -4,17 +4,19 @@
 services:
   dev:
     # No GPU image is published; default to the one built by `./img2num build --gpu`.
-    # If that image doesn't exist yet, Compose builds it from Dockerfile-gpu.dev (pull_policy: missing).
-    image: ${IMG2NUM_IMAGE:-img2num-dev:local-gpu}
+    # If that image doesn't exist yet, Compose builds it from Dockerfile-gpu.dev (pull_policy: missing),
+    # layered on IMG2NUM_BASE_IMAGE (the Dockerfile.dev image).
+    image: ${IMG2NUM_IMAGE:-img2num-dev:gpu}
     pull_policy: ${IMG2NUM_PULL_POLICY:-missing}
     build:
       context: .
       dockerfile: Dockerfile-gpu.dev
       args:
+        IMG2NUM_BASE_IMAGE: ${IMG2NUM_BASE_IMAGE:-ryanmillard/img2num-dev:latest}
         BUILD_DATE: ${BUILD_DATE:-}
         GIT_SHA: ${GIT_SHA:-}
     environment:
-      IMG2NUM_IMAGE: ${IMG2NUM_IMAGE:-img2num-dev:local-gpu}
+      IMG2NUM_IMAGE: ${IMG2NUM_IMAGE:-img2num-dev:gpu}
       NVIDIA_VISIBLE_DEVICES: all
       # "graphics" is required for the Vulkan/EGL driver libraries Dawn uses.
       NVIDIA_DRIVER_CAPABILITIES: compute,graphics,utility

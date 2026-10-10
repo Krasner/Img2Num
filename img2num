@@ -56,7 +56,7 @@ shift || true
 # ---------------------------------------------------------------------------
 IMG2NUM_DEFAULT_IMAGE="ryanmillard/img2num-dev:dev"
 # No GPU image is published, so GPU mode defaults to the one built by `./img2num build --gpu`.
-IMG2NUM_DEFAULT_GPU_IMAGE="img2num-dev:local-gpu"
+IMG2NUM_DEFAULT_GPU_IMAGE="img2num-dev:gpu"
 IMG2NUM_STATE_FILE="$(dirname "$0")/.img2num-state"
 
 # ---------------------------------------------------------------------------
@@ -207,12 +207,12 @@ run_in_container() {
   image="$(load_image)"
 
   # Locally built images don't exist on any registry, so never try to pull them.
-  if [[ "$image" == img2num-dev:local* ]]; then
+  if [[ "$image" == img2num-dev:* ]]; then
     pull_policy="missing"
     if ! docker image inspect "$image" >/dev/null 2>&1; then
       if [ "$IMG2NUM_GPU" -eq 1 ]; then
         # docker-compose.gpu.yml has a build section, so `compose up` builds the missing image.
-        echo "Local image $image not found; building it from Dockerfile-gpu.dev (this takes a while)..." >&2
+        echo "Local image $image not found; building it from Dockerfile-gpu.dev..." >&2
         BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
         GIT_SHA="$(git rev-parse HEAD 2>/dev/null || true)"
         export BUILD_DATE GIT_SHA
@@ -283,7 +283,8 @@ if [ "$MODE" = "build" ]; then
   }
 fi
 
-if [ "$MODE" = "build" ]; then
+# Dockerfile-gpu.dev only layers on top of a prebuilt Dockerfile.dev image, so it needs neither.
+if [ "$MODE" = "build" ] && [ "$IMG2NUM_GPU" -eq 0 ]; then
   if [ ! -f "./third_party/dawn/CMakeLists.txt" ]; then
     echo "Error: third_party/dawn is not initialized." >&2
     echo "Run: git submodule update --init --recursive" >&2
@@ -303,7 +304,7 @@ case "$MODE" in
     elif [ -n "${IMG2NUM_IMAGE:-}" ]; then
       BUILD_IMAGE="$IMG2NUM_IMAGE"
     elif [ "$IMG2NUM_GPU" -eq 1 ]; then
-      BUILD_IMAGE="img2num-dev:local-gpu"
+      BUILD_IMAGE="img2num-dev:gpu"
     else
       BUILD_IMAGE="img2num-dev:local"
     fi
@@ -456,7 +457,9 @@ Flags:
                           E.g.: ./img2num sh --ghcr-img dev
                            Resolves Docker image to ghcr.io/ryan-millard/img2num-dev:dev
   --gpu                 Enable NVIDIA GPU access (for Dawn/WebGPU via Vulkan).
-                        For build, uses Dockerfile-gpu.dev and defaults the tag to img2num-dev:local-gpu.
+                        For build, uses Dockerfile-gpu.dev and defaults the tag to img2num-dev:gpu.
+                        The GPU image is layered on ryanmillard/img2num-dev:latest; to use a local base:
+                          ./img2num build --gpu -- --build-arg IMG2NUM_BASE_IMAGE=img2num-dev:local
                         For run/exec/sh, adds docker-compose.gpu.yml (needs the NVIDIA Container Toolkit).
                         Persisted (with build/run/exec/sh): later commands keep GPU access until --no-gpu.
                           E.g.: ./img2num build --gpu && ./img2num sh
