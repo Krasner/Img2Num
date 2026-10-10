@@ -31,8 +31,14 @@ class GPU {
     bool init_attempted = false;
 
     GPU() = default;
+    ~GPU() = default;
 
     void cleanup() {
+        if (device) {
+            device.Destroy();          // free GPU resources deterministically
+            if (instance)
+                instance.ProcessEvents();  // flush the device-lost callback etc.
+        }
         queue = nullptr;
         device = nullptr;
         adapter = nullptr;
@@ -56,8 +62,8 @@ class GPU {
   public:
     // makes a single global instance that other files can reference
     static GPU& getClassInstance() {
-        static GPU gpuInstance;
-        return gpuInstance;
+        static GPU* gpuInstance = new GPU();
+        return *gpuInstance;
     }
 
     const wgpu::Device& get_device() {
@@ -291,9 +297,9 @@ class GPU {
         IMG2NUM_LOG_INFO("GPU Fully Initialized.");
     };
 
-    ~GPU() {
+    /*~GPU() {
         cleanup();
-    };
+    };*/
 };
 
 #endif
